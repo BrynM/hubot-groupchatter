@@ -1,0 +1,20 @@
+{
+    "name": "hubot-groupchatter",
+    "version": "0.0.1",
+    "description": "A Hubot helper to make easy group chatter.",
+    "author": "The Imgur Team",
+    "contributors": [
+        {
+            "name": "Bryn Mosher",
+            "email": "bryn@imgur.com"
+        },
+        {
+            "name": "Brian Kassouf",
+            "email": "brian@imgur.com"
+        }
+    ],
+    "dependencies": {
+        "underscore": ">= 1.8.0"
+    },
+    "main": "groupchatter.js"
+}
