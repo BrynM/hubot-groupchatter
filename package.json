@@ -1,6 +1,6 @@
 {
     "name": "hubot-groupchatter",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "A Hubot helper to make easy group chatter.",
     "author": "Bryn Mosher",
     "license": "GPLv3",

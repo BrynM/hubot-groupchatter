@@ -45,8 +45,10 @@ This module is a framework for setting up Hubot as a conversation participant. T
 * This module will not help you write regular expressions. You're on your own there.
 * I wrote this code quickly and don't have a lot of time for maintaining it. If you have issues please feel free to file a bug, but I cannot guarantee a decent response time. If you'd like to join the project let me know, but I must ask that you have a history of contributing before allowing you direct access (unless I can personally vouch for you).
 * As mentioned above, contribution is encouraged. If you make a pull request, please feel free to add yourself at the *bottom* of the contributors list in package.json with your PR.
+* If you want to install from GitHub, use ```npm install git://github.com/BrynM/hubot-groupchatte.git``` or ```npm install git://github.com/BrynM/hubot-groupchatte.git#0.0.2``` for a specific version.
 * If you want to use the internal console messaging, keep your changes to being declarative. That is, report raw values - don't try to do things like math or calculation. This will keep the console functionality messages cheap.
 * I didn't write any tests. My bad. See note further above about being written quickly. See GPLv3 language for fitness of use.
+
 
 ## Future Plans
 
