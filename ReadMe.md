@@ -1,30 +1,28 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
-# Group Chatter for Hubot
-
-This module is a framework for setting up Hubot as a conversation participant. The concept is that Hubot will listen to normal chat and interject or join in.
-
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Group Chatter for Hubot](#group-chatter-for-hubot)
-  - [Installation](#installation)
-  - [Technical Details](#technical-details)
-  - [Usage](#usage)
-  - [Reference](#reference)
-    - [```chatter #hubot-groupchatter```](#chatter-#hubot-groupchatter)
-        - [Parameters](#parameters)
-    - [```chatter.addMsg(key, message)```](#chatteraddmsgkey-message)
-        - [Parameters](#parameters-1)
-    - [```chatter.afterTimeout(key, timeout, random)```](#chatteraftertimeoutkey-timeout-random)
-        - [Parameters](#parameters-2)
-    - [```chatter.flipFlop(key, responseKeyA, responseKeyB, percentageA)```](#chatterflipflopkey-responsekeya-responsekeyb-percentagea)
-        - [Parameters](#parameters-3)
-    - [```chatter.pctChance(key, percent, bonus)```](#chatterpctchancekey-percent-bonus)
-        - [Parameters](#parameters-4)
-    - [```chatter.respond(key, messageObject)```](#chatterrespondkey-messageobject)
-        - [Parameters](#parameters-5)
-    - [```chatter.waitForIt(key, count, random)```](#chatterwaitforitkey-count-random)
-        - [Parameters](#parameters-6)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Technical Details](#technical-details)
+- [Future Plans](#future-plans)
+- [Reference](#reference)
+  - [Response template vars](#response-template-vars)
+      - [Response Template Variables](#response-template-variables)
+  - [```chatter #hubot-groupchatter```](#chatter-#hubot-groupchatter)
+      - [Parameters](#parameters)
+  - [```chatter.addResponse(key, message)```](#chatteraddresponsekey-message)
+      - [Parameters](#parameters-1)
+  - [```chatter.throttle(key, timeout, random)```](#chatterthrottlekey-timeout-random)
+      - [Parameters](#parameters-2)
+  - [```chatter.flipFlop(key, responseKeyA, responseKeyB, percentageA)```](#chatterflipflopkey-responsekeya-responsekeyb-percentagea)
+      - [Parameters](#parameters-3)
+  - [```chatter.percentChance(key, percent, bonus)```](#chatterpercentchancekey-percent-bonus)
+      - [Parameters](#parameters-4)
+  - [```chatter.respond(key, messageObject)```](#chatterrespondkey-messageobject)
+      - [Parameters](#parameters-5)
+  - [```chatter.waitForIt(key, count, random)```](#chatterwaitforitkey-count-random)
+      - [Parameters](#parameters-6)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
