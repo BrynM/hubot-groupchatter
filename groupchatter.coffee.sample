@@ -1,0 +1,208 @@
+# Description:
+#   respond to various things said in group chats
+#
+# Dependencies:
+#   None
+#
+# Configuration:
+#   None
+#
+# Commands:
+#
+# Author:
+#   bryn, based on brian's yourmom.coffee
+
+###
+#
+# Required stuff
+#
+###
+
+###
+# Require the module
+###
+chatter = require 'hubot-groupchatter'
+
+###
+# Assign chatter to the bot/exports
+###
+module.exports = chatter.startup
+
+###
+#
+# Optional things
+#
+###
+
+###
+# Get debug output.
+###
+# 'debug', 'info', 'warn', and 'silent' are the options.
+#chatter.logLevel('debug')
+
+###
+# Set the prefix for usernames (so you can make callouts in chat)
+###
+# the default is '@'
+#chatter.setUserPrefix('@');
+
+###
+# Set the suffix for usernames (so you can make callouts in chat)
+###
+# The default is ''
+#chatter.setUserSuffix('!');
+
+###
+#
+# User setup of responses
+#
+###
+
+###
+# DO IT! - simple single answer example
+###
+chatter.regex('doIt', /^do it([^a-z]|$)/i)
+chatter.addResponse('doIt', 'http://i.imgur.com/nFSebim.gif')
+# only answer once every N seconds at most
+chatter.throttle('doIt', 10)
+
+###
+# table flip - A tendency to mostly reprimand, but sometimes reward, table flipping using flip-floping
+###
+# The responses need to be set up first
+# Negative/anarchist responses to flipping tables (encouragement)
+chatter.addResponse('tablesNegative', '(╯°□°）╯︵ ┻━┻')
+chatter.addResponse('tablesNegative', '┻━┻ ︵ヽ(`Д´)ﾉ︵﻿ ┻━┻')
+chatter.addResponse('tablesNegative', '(ﾉ ಥ 益 ಥ ）ﾉ﻿ ┻━┻')
+chatter.addResponse('tablesNegative', '(ノ ゜Д゜)ノ ︵ ┻━┻')
+chatter.addResponse('tablesNegative', 'http://i.imgur.com/xBQOzc4.gif')
+chatter.addResponse('tablesNegative', 'http://i.imgur.com/QBOsBHT.gif')
+chatter.addResponse('tablesNegative', 'http://i.imgur.com/8E7Vk.gif')
+chatter.addResponse('tablesNegative', 'http://i.imgur.com/G3ISG8d.gif')
+chatter.addResponse('tablesNegative', 'http://i.imgur.com/veH7CZ3.gif')
+chatter.addResponse('tablesNegative', 'http://i.imgur.com/LhtcAgb.gif')
+chatter.addResponse('tablesNegative', 'http://i.imgur.com/m1PO7Gd.gif')
+chatter.addResponse('tablesNegative', 'Yeah, ##user##! Screw Tables!')
+#
+# Positive/comforting responses to flipping tables
+chatter.addResponse('tablesPositive', '┬─┬ノ( º _ ºノ)')
+chatter.addResponse('tablesPositive', '┬─┬ノ( º _ ºノ) Please be nice to tables.')
+chatter.addResponse('tablesPositive', '(._.)~ ┬──┬ ##user##, be nice to tables.')
+chatter.addResponse('tablesPositive', '┬──┬﻿ ¯ヽ_(ツ)')
+chatter.addResponse('tablesPositive', '┬──┬﻿ ¯ヽ_(ツ) A straigntened table is a happy table.')
+chatter.addResponse('tablesPositive', '(/¯◡ ‿ ◡)/¯ ~ ┬──┬﻿')
+chatter.addResponse('tablesPositive', '(/¯◡ ‿ ◡)/¯ ~ ┬──┬ That table\'s always been there to support you!﻿')
+chatter.addResponse('tablesPositive', 'It\'s okay table. I\'ll get you out of here. http://i.imgur.com/mVYADwk.gif')
+chatter.addResponse('tablesPositive', 'Run table! ##user##\'s gonna get you! http://i.imgur.com/NVg73.gif')
+chatter.addResponse('tablesPositive', 'Hey ##user##! Let\'s be positive about tables! http://i.imgur.com/dbHxR5I.gif')
+#
+# Actually respond to flipping tables by flip-flopping
+#
+# set the regex to activate the "responses"
+chatter.regex('tableFlip', /\(tableflip\)/i);
+# set our two message keys for the flip-flop
+chatter.flipFlop('tableFlip', 'tablesPositive', 'tablesNegative', 75)
+# only respond with an N percent chance
+chatter.percentChance('tableFlip', 35)
+# only answer once every N seconds at most
+chatter.throttle('tableFlip', 25, 10)
+
+###
+# Magic 8 Ball - A flip-flop example
+###
+# set up our prefix
+# unicode ➑ example: '\u2791' 
+eightBallPrefix = '##user##\'s \u2791: '
+#
+# yesses
+chatter.addResponse('eightBallYes', eightBallPrefix+'It is certain.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'It is decidedly so.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Without a doubt.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Yes definitely.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'You may rely on it.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'As I see it, yes.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Most likely.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Outlook good.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Yes.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Signs point to yes.')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Squee!')
+chatter.addResponse('eightBallYes', eightBallPrefix+'Fosho!')
+# hipchat extras
+chatter.addResponse('eightBallYes', eightBallPrefix+'(awwyiss)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(celeryman)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(awesome)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(dealwithit)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(fuckyeah)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(freddie)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(goodnews)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(rockon)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(poo)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(tony)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(fonzie)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(feelsgoodman)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(ducreux)')
+chatter.addResponse('eightBallYes', eightBallPrefix+'(indeed)')
+#
+# noses?
+chatter.addResponse('eightBallNo', eightBallPrefix+'Reply hazy try again.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'Ask again later.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'Better not tell you now.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'Cannot predict now.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'Concentrate and ask again.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'Don\'t count on it.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'My reply is no.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'My sources say no.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'Outlook not so good.')
+chatter.addResponse('eightBallNo', eightBallPrefix+'Very doubtful.')
+# hipchat extras
+chatter.addResponse('eightBallNo', eightBallPrefix+'(areyoukiddingme)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(badpokerface)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(derp)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(disapproval)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(gtfo)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(haha)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(itsatrap)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(lolwut)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(notsureif)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(ohgodwhy)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(paddlin)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(shrug)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(wtf)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(donotwant)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(facepalm)')
+chatter.addResponse('eightBallNo', eightBallPrefix+'(feelsbadman)')
+#
+# Actually respond to the ball by flip-flopping
+#
+# set the regex to activate the "responses"
+chatter.regex('eightBall', /.*[^a-z](eight|8)[\t \-]*balls?([^a-z]|$)/i)
+# set our two message keys for the flip-flop
+# by default a 50/50 chance
+chatter.flipFlop('eightBall', 'eightBallYes', 'eightBallNo')
+
+###
+# Count to 30 - a cheapo countdown for showing off delays
+###
+# look for a request
+chatter.regex('count30', /someone count to 30/i)
+# set our "alarm"
+chatter.addResponse('count30', '##user##! Your count of 30 is up!')
+# set a 30 second delay for the message
+chatter.delay('count30', 30)
+# throttle other requests
+chatter.throttle('count30', 30)
+
+###
+# BOO! - A simple random delay
+###
+chatter.regex('boo', /(^|[^a-z])scared of robots([^a-z]|$)/i)
+chatter.addResponse('boo', '##user## BOO!')
+
+###
+# Mentions of your mom
+###
+chatter.regex('yourMom', /your mom/i)
+chatter.addResponse('yourMom', '(rekt)')
+chatter.addResponse('yourMom', 'http://en.wikipedia.org/wiki/List_of_burn_centers_in_the_United_States')
+chatter.addResponse('yourMom', 'http://i.imgur.com/a0QcvmK.gif')
+chatter.addResponse('yourMom', 'https://i.imgur.com/S7miMzp.png')

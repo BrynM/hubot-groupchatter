@@ -27,8 +27,10 @@ var chatter = {};
     * Set up our environment
     */
     var env = {
-        consolePrefix: '[CHATTER] ',
+        consolePrefix: 'CHATTER',
         debugMode: true,
+        delays: {},
+        delaysRandom: {},
         flipFlops: {},
         infoMode: true,
         lastSent: {},
@@ -43,7 +45,10 @@ var chatter = {};
         timeoutRandom: {},
         userPrefix: '@',
         userSuffix: '',
+        waitCounts: {},
         waitForIt: {},
+        waitForTimeout: {},
+        waitingTimes: {},
         warnMode: true
     };
 
@@ -62,11 +67,39 @@ var chatter = {};
 
         env.responses[key].push(message);
 
+        dbg('Added '+message.length+' character response.', key);
+
         return message;
     };
 
-    chatter.delay = function(key, amount) {
-//stub
+    chatter.delay = function(key, seconds) {
+        var secs = parseInt(seconds, 10);
+
+        // because a delay of 0 is stupid...
+        if(!isStr(key) || (secs < 1)) {
+            return;
+        }
+
+        env.delays[key] = secs;
+
+        dbg('Set delay.', [key, env.delays[key]]);
+
+        return env.delays[key];
+    }
+
+    chatter.delayRandom = function(key, seconds) {
+        var secs = parseInt(seconds, 10);
+
+        // because a delay of 0 is stupid...
+        if(!isStr(key) || (secs < 1)) {
+            return;
+        }
+
+        env.delaysRandom[key] = secs;
+
+        dbg('Set random delay.', [key, env.delaysRandom[key]]);
+
+        return env.delaysRandom[key];
     }
 
     chatter.flipFlop = function(key, responsesA, responsesB, pctA) {
@@ -91,6 +124,8 @@ var chatter = {};
         } else {
             env.flipFlops[key].push(-1);
         }
+
+        dbg('Set flip-flop.', [key, env.flipFlops[key]]);
 
         return env.flipFlops[key];
     };
@@ -121,10 +156,10 @@ var chatter = {};
             }
         }
 
+        warn('Log level set.', env.logLevel);
+
         return ''+env.logLevel;
     }
-    // set the default log level
-    chatter.logLevel('warn');
 
     chatter.percentChance = function(key, pct, bonus) {
         var chance = parseInt(pct, 10);
@@ -139,12 +174,10 @@ var chatter = {};
             env.pctBonus[key] = parseInt(bonus, 10);
         }
 
+        dbg('Set percentage chance.', [key, env.percentChance[key]]);
+
         return env.percentChance[key];
     };
-
-    chatter.randomDelay = function(key, amount) {
-//stub
-    }
 
     chatter.regex = function(key, regex) {
         var rex = false;
@@ -159,7 +192,7 @@ var chatter = {};
             try {
                 rex = new RegExp(regex);
             } catch(e) {
-                err()
+                err('Could not create regex from string!', [key, regex, e]);
                 rex = false;
             }
         }
@@ -188,37 +221,58 @@ var chatter = {};
     }
 
     chatter.startup = function(robot) {
-        info('Loading up!');
+        info('Loading up robot!');
         env.robot = robot;
 
         applyAllRegexes(robot);
     };
 
-    chatter.throttle = function(key, timeout, random) {
-        var tO = parseInt(timeout, 10);
+    chatter.throttle = function(key, seconds, random) {
+        var tO = parseInt(seconds, 10);
 
         if(!isStr(key) || (tO < 1)) {
             return;
         }
 
-        env.timeouts[key] = timeout;
+        env.timeouts[key] = seconds;
 
         if(typeof random === 'number') {
             env.timeoutRandom[key] = parseInt(random, 10);
         }
 
+        dbg('Set to be throttled.', [key, env.timeouts[key]]);
+
         return env.timeouts[key];
     };
+
+    chatter.waitForIt = function(key, count, seconds) {
+        var waits = parseInt(count, 10);
+
+        // because waiting 1 is stupid...
+        if(!isStr(key) || (waits < 2)) {
+            return;
+        }
+
+        env.waitForIt[key] = waits;
+
+        if(typeof seconds === 'number') {
+            env.waitForTimeout[key] = parseInt(seconds, 10);
+        }
+
+        dbg('Set to wait for it.', [key, env.waitForIt[key], env.waitForTimeout[key]]);
+
+        return env.waitForIt[key];
+    }
 
     /*
     * Communication functions
     */
 
-    function consoleArgs(args) {
+    function consoleArgs(args, level) {
         var argsCopy = _.toArray(args);
 
         if(typeof argsCopy[0] === 'string') {
-            argsCopy[0] = env.consolePrefix+argsCopy[0];
+            argsCopy[0] = '['+env.consolePrefix+' '+level.toUpperCase()+'] '+argsCopy[0];
         }
 
         return argsCopy;
@@ -226,25 +280,25 @@ var chatter = {};
 
     function dbg(msg) {
         if(!env.silentMode && env.debugMode) {
-            console.log.apply(console, consoleArgs(arguments));
+            console.log.apply(console, consoleArgs(arguments, 'debug'));
         }
     }
 
     function err(msg) {
         if(!env.silentMode) {
-            console.error.apply(console, consoleArgs(arguments));
+            console.error.apply(console, consoleArgs(arguments, 'error'));
         }
     }
 
     function info(msg) {
         if(!env.silentMode && env.infoMode) {
-            console.info.apply(console, consoleArgs(arguments));
+            console.info.apply(console, consoleArgs(arguments, 'info'));
         }
     }
 
     function warn(msg) {
         if(!env.silentMode && env.warnMode) {
-            console.warn.apply(console, consoleArgs(arguments));
+            console.warn.apply(console, consoleArgs(arguments, 'warn'));
         }
     }
 
@@ -267,13 +321,18 @@ var chatter = {};
     function applyRegex(robot, key, regex) {
         var callback;
 
-        if(_.isObject(robot) && _.isFunction(robot.hear) && regex instanceof RegExp) {
-            callback = function(msg) {
-                return respond(key, msg);
-            };
+        try{
+            if(_.isObject(robot) && _.isFunction(robot.hear) && regex instanceof RegExp) {
+                callback = function(msg) {
+                    return respond(key, msg);
+                };
 
-            robot.hear(regex, callback);
-            dbg('Applied regex.', [key, regex]);
+                robot.hear(regex, callback);
+
+                dbg('Applied regex.', [key, regex]);
+            }
+        } catch(e) {
+            err('Could not apply regex!', [key, regex, robot]);
         }
     }
 
@@ -281,7 +340,7 @@ var chatter = {};
         var bonus = 0;
 
         if(typeof env.percentChance[key] !== 'number') {
-            return;
+            return true;
         }
 
         if(typeof env.pctBonus[key] !== 'number') {
@@ -312,14 +371,44 @@ var chatter = {};
         return false;
     }
 
-    function checkWaitForIt(key, msgObj) {
-console.log('waitForIt '+key, env.waitForIt[key]);
+    function checkWaitForIt(key) {
+        var waitStamp;
+
         if(typeof env.waitForIt[key] !== 'number') {
             // carry on...
             return true;
         }
 
-        return true;
+        waitStamp = new Date().getTime();
+
+        // check before we increment
+        if(typeof env.waitCounts[key] !== 'number') {
+            resetWaitForIt(key, waitStamp);
+        }
+
+        env.waitCounts[key]++;
+
+        if(env.waitCounts[key] < 2) {
+            env.waitingTimes[key] = waitStamp;
+        }
+
+        if(typeof env.waitForTimeout[key] === 'number') {
+            if(waitStamp < (env.waitingTimes[key] + (env.waitForTimeout[key]*1000))) {
+                // not enough time
+                return;
+            }
+        }
+
+        // waitForTimeout, waitingTimes
+
+        if(env.waitCounts[key] >= env.waitForIt[key]) {
+            dbg('Wait for it count met.', [env.waitForIt[key], env.waitCounts[key]])
+            resetWaitForIt(key, null);
+
+            return true;
+        }
+
+        return false;
     }
 
     function flipFlop(key, msgObj) {
@@ -339,7 +428,7 @@ console.log('waitForIt '+key, env.waitForIt[key]);
             }
 
             if(checkTimeout(respKey)) {
-                msg = msgRandom(respKey, msgObj);
+                msg = delayResponse(respKey, msgObj);
 
                 if(msg) {
                     setLastSent(key);
@@ -403,7 +492,77 @@ console.log('waitForIt '+key, env.waitForIt[key]);
         return typeof key === 'string' && key.length > 0;
     }
 
-    function msgRandom(key, msgObj) {
+    function percentChance(pct, bonus) {
+        var ran = parseInt(Math.random() * 100, 10),
+            plus = parseInt(bonus, 10) || 0;
+
+        if(parseInt(pct, 10) >= (ran + plus)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function resetWaitForIt(key, stamp) {
+        env.waitCounts[key] = 0;
+        env.waitingTimes[key] = stamp;
+    }
+
+    // our initial response handler
+    // this is an intermediary function
+    function respond(key, msgObj) {
+        dbg('Checking for possible responses.', key);
+
+        if(!checkWaitForIt(key)) {
+            info('Check waitForIt test fail. Aborting response.', key);
+            return;
+        }
+
+        if(!checkTimeout(key)) {
+            info('Check throttle test fail. Aborting response.', key);
+            return;
+        }
+
+        if(!checkChance(key)) {
+            info('Check chance test fail. Aborting response.', key);
+            return;
+        }
+
+        if(flipFlop(key, msgObj)) {
+            dbg('Found a flip-flop. Sent.', key);
+            return;
+        }
+
+        dbg('Delivering random message.', key);
+        delayResponse(key, msgObj);
+    };
+
+    // if no delay is set, fires immediately
+    // this is an intermediary function
+    function delayResponse(key, msgObj) {
+        var wait = 0;
+
+        if(typeof env.delays[key] === 'number') {
+            wait = wait+env.delays[key];
+        }
+
+        if(typeof env.delaysRandom[key] === 'number') {
+            wait = wait+(env.delaysRandom[key]*Math.random());
+        }
+
+        if(wait < 1) {
+            return respondRandom(key, msgObj);
+        }
+
+        dbg('Delaying random message.', [key, wait]);
+
+        return setTimeout(function() {
+            respondRandom(key, msgObj);
+        }, parseInt(wait*1000, 10));
+    }
+
+    // the real meat of the response after passing through intermediaries
+    function respondRandom(key, msgObj) {
         var response,
             last,
             vars = {
@@ -420,6 +579,7 @@ console.log('waitForIt '+key, env.waitForIt[key]);
             };
 
         if(!_.isArray(env.responses[key]) || env.responses[key].length < 1) {
+            warn('Response set is empty!', key);
             return;
         }
         
@@ -429,51 +589,13 @@ console.log('waitForIt '+key, env.waitForIt[key]);
         last = setLastSent(key);
 
         if(env.debugMode) {
-           debug('Message sent.', {'key': key, 'response': response, 'vars': vars, 'lastSent': last});
+            dbg('Response sent.', {'key': key, 'response': response, 'vars': vars, 'lastSent': last});
         } else {
-           info('Message sent.', key);
+            info('Response sent.', key);
         }
 
         return response;
     }
-
-    function percentChance(pct, bonus) {
-        var ran = parseInt(Math.random() * 100, 10),
-            plus = parseInt(bonus, 10) || 0;
-
-        if(parseInt(pct, 10) >= (ran + plus)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    function respond(key, msgObj) {
-        info('Checking for possible responses.', key);
-
-        if(!checkWaitForIt(key)) {
-            info('Check waitForIt test fail.', key);
-            return;
-        }
-
-        if(!checkTimeout(key)) {
-            info('Check throttle test fail.', key);
-            return;
-        }
-
-        if(!checkChance(key)) {
-            info('Check chance test fail.', key);
-            return;
-        }
-
-        if(flipFlop(key, msgObj)) {
-            info('Found a flip-flop.', key);
-            return;
-        }
-
-        info('Delivering random message.', key);
-        msgRandom(key, msgObj);
-    };
 
     function setLastSent(key) {
         var rand = 0,
@@ -488,6 +610,8 @@ console.log('waitForIt '+key, env.waitForIt[key]);
         }
 
         env.lastSent[key] = parseInt(new Date().getTime() + rand, 10);
+
+        dbg('Set last sent.', [key, env.lastSent[key]]);
 
         return env.lastSent[key];
     }
