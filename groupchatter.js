@@ -1,30 +1,57 @@
+/*
+* groupchatter.js
+* https://github.com/BrynM/hubot-groupchatter
+* Copyright (C) 2015 Bryn Mosher
+* 
+* This program is free software: you can redistribute it and/or modify it under
+* the terms of the GNU General Public License as published by the Free Software
+* Foundation, either version 3 of the License, or (at your option) any later
+* version.
+* 
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+* details.
+* 
+* You should have received a copy of the GNU General Public License along with
+* this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 var _ = require('underscore');
-
-console.log('process.env.HUBOT_LOG_LEVEL', process.env.HUBOT_LOG_LEVEL);
 
 var chatter = {};
 
 (function() {
+
     /*
     * Set up our environment
     */
-    env = {
+    var env = {
+        consolePrefix: '[CHATTER] ',
+        debugMode: true,
         flipFlops: {},
+        infoMode: true,
         lastSent: {},
+        logLevel: 'warn',
         pctBonus: {},
-        pctChance: {},
+        percentChance: {},
         responses: {},
+        regexes: {},
+        robot: null,
+        silentMode: false,
         timeouts: {},
         timeoutRandom: {},
-        waitForIt: {}
+        userPrefix: '@',
+        userSuffix: '',
+        waitForIt: {},
+        warnMode: true
     };
 
     /*
     * chatter public functions
     */
 
-    chatter.addMsg = function(key, message) {
+    chatter.addResponse = function(key, message) {
         if(!isStr(key) || !isStr(message)) {
             return;
         }
@@ -34,22 +61,13 @@ var chatter = {};
         }
 
         env.responses[key].push(message);
+
+        return message;
     };
 
-    chatter.afterTimeout = function(key, timeout, random) {
-        var tO = parseInt(timeout, 10);
-
-        if(!isStr(key) || (tO < 1)) {
-            return;
-        }
-
-        env.timeouts[key] = timeout;
-
-        if(typeof random === 'number') {
-            env.timeoutRandom[key] = parseInt(random, 10);
-        }
-
-    };
+    chatter.delay = function(key, amount) {
+//stub
+    }
 
     chatter.flipFlop = function(key, responsesA, responsesB, pctA) {
         var pctInt = parseInt(pctA, 10);
@@ -77,53 +95,192 @@ var chatter = {};
         return env.flipFlops[key];
     };
 
-    chatter.pctChance = function(key, pct, bonus) {
+    chatter.logLevel = function(setMode) {
+        if(isStr(setMode)) {
+            switch(setMode.toLowerCase()) {
+                case 'debug':
+                    env.debugMode = true;
+                    env.infoMode = true;
+                    env.warnMode = true;
+                    env.logLevel = 'debug';
+                    break;
+                case 'info':
+                    env.infoMode = true;
+                    env.warnMode = true;
+                    env.logLevel = 'info';
+                    break;
+                case 'warn':
+                case 'warning':
+                    env.warnMode = true;
+                    env.logLevel = 'warn';
+                    break;
+                case 'silent':
+                    env.silentMode = true;
+                    env.logLevel = 'silent';
+                    break;
+            }
+        }
+
+        return ''+env.logLevel;
+    }
+    // set the default log level
+    chatter.logLevel('warn');
+
+    chatter.percentChance = function(key, pct, bonus) {
         var chance = parseInt(pct, 10);
 
         if(!isStr(key) || (chance < 1)) {
             return;
         }
 
-        env.pctChance[key] = chance;
+        env.percentChance[key] = chance;
 
         if(typeof bonus === 'number') {
             env.pctBonus[key] = parseInt(bonus, 10);
         }
+
+        return env.percentChance[key];
     };
 
-    chatter.respond = function(key, msgObj) {
-console.log('checking', key);
+    chatter.randomDelay = function(key, amount) {
+//stub
+    }
 
-        if(!checkWaitForIt(key)) {
-console.log('wait fail')
+    chatter.regex = function(key, regex) {
+        var rex = false;
+
+        if(!isStr(key)) {
             return;
         }
 
-        if(!checkTimeout(key)) {
-console.log('time fail')
-            return;
+        if(regex instanceof RegExp) {
+            rex = regex;
+        } else if(isStr(regex)) {
+            try {
+                rex = new RegExp(regex);
+            } catch(e) {
+                err()
+                rex = false;
+            }
         }
 
-        if(!checkChance(key)) {
-console.log('chance fail')
-            return;
+        if(rex) {
+            env.regexes[key] = rex;
         }
 
-        if(flipFlop(key, msgObj)) {
-            return;
-        }
-
-        msgRandom(key, msgObj);
+        return rex;
     };
+
+    chatter.setUserPrefix = function(prefix) {
+        if(typeof prefix === 'string') {
+            env.userPrefix = ''+prefix;
+        }
+
+        return ''+env.userPrefix;
+    }
+
+    chatter.setUserSuffix = function(suffix) {
+        if(typeof suffix === 'string') {
+            env.userSuffix = ''+suffix;
+        }
+
+        return ''+env.userPrefix;
+    }
+
+    chatter.startup = function(robot) {
+        info('Loading up!');
+        env.robot = robot;
+
+        applyAllRegexes(robot);
+    };
+
+    chatter.throttle = function(key, timeout, random) {
+        var tO = parseInt(timeout, 10);
+
+        if(!isStr(key) || (tO < 1)) {
+            return;
+        }
+
+        env.timeouts[key] = timeout;
+
+        if(typeof random === 'number') {
+            env.timeoutRandom[key] = parseInt(random, 10);
+        }
+
+        return env.timeouts[key];
+    };
+
+    /*
+    * Communication functions
+    */
+
+    function consoleArgs(args) {
+        var argsCopy = _.toArray(args);
+
+        if(typeof argsCopy[0] === 'string') {
+            argsCopy[0] = env.consolePrefix+argsCopy[0];
+        }
+
+        return argsCopy;
+    }
+
+    function dbg(msg) {
+        if(!env.silentMode && env.debugMode) {
+            console.log.apply(console, consoleArgs(arguments));
+        }
+    }
+
+    function err(msg) {
+        if(!env.silentMode) {
+            console.error.apply(console, consoleArgs(arguments));
+        }
+    }
+
+    function info(msg) {
+        if(!env.silentMode && env.infoMode) {
+            console.info.apply(console, consoleArgs(arguments));
+        }
+    }
+
+    function warn(msg) {
+        if(!env.silentMode && env.warnMode) {
+            console.warn.apply(console, consoleArgs(arguments));
+        }
+    }
 
     /*
     * Internal functions
     */
 
+    function applyAllRegexes(robot) {
+        var rgxSets = _.extendOwn({}, env.regexes),
+            iter;
+
+        for(iter in rgxSets) {
+            if(rgxSets[iter] instanceof RegExp) {
+                dbg('Attempting to apply regex.', iter);
+                applyRegex(robot, iter, rgxSets[iter]);
+            }
+        }
+    }
+
+    function applyRegex(robot, key, regex) {
+        var callback;
+
+        if(_.isObject(robot) && _.isFunction(robot.hear) && regex instanceof RegExp) {
+            callback = function(msg) {
+                return respond(key, msg);
+            };
+
+            robot.hear(regex, callback);
+            dbg('Applied regex.', [key, regex]);
+        }
+    }
+
     function checkChance(key) {
         var bonus = 0;
 
-        if(typeof env.pctChance[key] !== 'number') {
+        if(typeof env.percentChance[key] !== 'number') {
             return;
         }
 
@@ -131,7 +288,7 @@ console.log('chance fail')
             bonus = env.pctBonus[key];
         }
 
-        return pctChance(env.pctChance[key], bonus);
+        return percentChance(env.percentChance[key], bonus);
     }
 
     function checkTimeout(key) {
@@ -151,7 +308,7 @@ console.log('chance fail')
             return true;
         }
 
-console.log('remains...', (env.lastSent[key] - ago) / 1000);
+        dbg('Time remaining for '+key, (env.lastSent[key] - ago) / 1000);
         return false;
     }
 
@@ -175,7 +332,7 @@ console.log('waitForIt '+key, env.waitForIt[key]);
                 chance = env.flipFlops[key][2];
             }
 
-            if(pctChance(chance)) {
+            if(percentChance(chance)) {
                 respKey = env.flipFlops[key][0];
             } else {
                 respKey = env.flipFlops[key][1];
@@ -194,8 +351,52 @@ console.log('waitForIt '+key, env.waitForIt[key]);
         return false;
     }
 
-    function getUser(msgObj) {
-        return msgObj.message.user.name;
+    function getMatchFromMsg(msgObj) {
+        if(_.isArray(msgObj.match)) {
+            return msgObj.match[0];
+        }
+
+        return 'unknown-match';
+    }
+
+    function getQuoteFromMsg(msgObj) {
+        if(_.isObject(msgObj.message) && isStr(msgObj.message.text)) {
+            return msgObj.message.text;
+        }
+
+        return 'unknown-text';
+    }
+
+    function getRobotFromMsg(msgObj) {
+        if(_.isObject(msgObj.robot)) {
+            return msgObj.robot.name;
+        }
+
+        return 'unknown-robot';
+    }
+
+    function getRobotIdFromMsg(msgObj) {
+        if(_.isObject(msgObj.message) && _.isObject(msgObj.message.user)) {
+            return msgObj.message.user.id;
+        }
+
+        return 'unknown-robot-id';
+    }
+
+    function getRoomFromMsg(msgObj) {
+        if(_.isObject(msgObj.message)) {
+            return msgObj.message.room;
+        }
+
+        return 'unknown-room';
+    }
+
+    function getUserFromMsg(msgObj) {
+        if(_.isObject(msgObj.message) && _.isObject(msgObj.message.user)) {
+            return msgObj.message.user.name;
+        }
+
+        return 'unknown-user';
     }
 
     function isStr(key) {
@@ -204,8 +405,18 @@ console.log('waitForIt '+key, env.waitForIt[key]);
 
     function msgRandom(key, msgObj) {
         var response,
+            last,
             vars = {
-                user: getUser(msgObj)
+                'id': getRobotIdFromMsg(msgObj),
+                'match': getMatchFromMsg(msgObj),
+                'quote': getQuoteFromMsg(msgObj),
+                'robot': env.userPrefix+getRobotFromMsg(msgObj)+env.userSuffix,
+                'room': getRoomFromMsg(msgObj),
+                'user': env.userPrefix+getUserFromMsg(msgObj)+env.userSuffix,
+                'time': new Date().toTimeString(),
+                'date': new Date().toDateString(),
+                'utc': new Date().toUTCString(),
+                'fulldate': new Date().toString()
             };
 
         if(!_.isArray(env.responses[key]) || env.responses[key].length < 1) {
@@ -215,12 +426,18 @@ console.log('waitForIt '+key, env.waitForIt[key]);
         response = swapVars(env.responses[key][Math.floor(Math.random()*env.responses[key].length)], vars);
 
         msgObj.send(response)
-        setLastSent(key);
+        last = setLastSent(key);
+
+        if(env.debugMode) {
+           debug('Message sent.', {'key': key, 'response': response, 'vars': vars, 'lastSent': last});
+        } else {
+           info('Message sent.', key);
+        }
 
         return response;
     }
 
-    function pctChance(pct, bonus) {
+    function percentChance(pct, bonus) {
         var ran = parseInt(Math.random() * 100, 10),
             plus = parseInt(bonus, 10) || 0;
 
@@ -230,6 +447,33 @@ console.log('waitForIt '+key, env.waitForIt[key]);
 
         return false;
     }
+
+    function respond(key, msgObj) {
+        info('Checking for possible responses.', key);
+
+        if(!checkWaitForIt(key)) {
+            info('Check waitForIt test fail.', key);
+            return;
+        }
+
+        if(!checkTimeout(key)) {
+            info('Check throttle test fail.', key);
+            return;
+        }
+
+        if(!checkChance(key)) {
+            info('Check chance test fail.', key);
+            return;
+        }
+
+        if(flipFlop(key, msgObj)) {
+            info('Found a flip-flop.', key);
+            return;
+        }
+
+        info('Delivering random message.', key);
+        msgRandom(key, msgObj);
+    };
 
     function setLastSent(key) {
         var rand = 0,
@@ -244,6 +488,8 @@ console.log('waitForIt '+key, env.waitForIt[key]);
         }
 
         env.lastSent[key] = parseInt(new Date().getTime() + rand, 10);
+
+        return env.lastSent[key];
     }
 
     function swapVars(str, vars) {
@@ -261,137 +507,3 @@ console.log('waitForIt '+key, env.waitForIt[key]);
 })();
 
 module.exports = chatter;
-
-
-/*
-# Description:
-#   respond to various things said in group chats
-#
-# Dependencies:
-#   None
-#
-# Configuration:
-#   None
-#
-# Commands:
-#
-# Author:
-#   bryn, based on brian's yourmom.coffee
-
-chatter = require 'hubot-groupchatter'
-
-# the responses - format to your use (arrays, strings, etc.)
-groupResponses = {
-    doIt: "http://i.imgur.com/nFSebim.gif",
-    tablesNegative: [
-      "(╯°□°）╯︵ ┻━┻",
-      "┻━┻ ︵ヽ(`Д´)ﾉ︵﻿ ┻━┻",
-      "(ﾉಥ益ಥ）ﾉ﻿ ┻━┻",
-      "Yeah! Screw Tables!"
-    ],
-    tablesPositive: [
-      "┬─┬ノ( º _ ºノ) Please be nice to tables.",
-      "┬──┬﻿ ¯\\_(ツ) A straigntened table is a happy table."
-    ],
-    thanksGeoff: [
-      "Thanks Geoff!",
-      "http://s.imgur.com/images/aboutus/geoff.jpg"
-    ],
-    NSFW: "ಠ__ಠ"
-    yourMom: [
-      "(rekt)",
-      "http://en.wikipedia.org/wiki/List_of_burn_centers_in_the_United_States",
-      "http://i.imgur.com/a0QcvmK.gif",
-      "https://i.imgur.com/S7miMzp.png"
-    ]
-}
-
-###
-YOUR SETTINGS GO HERE
-###
-
-# The bot will wait until triggered N times in S secnds.
-# An array of [N, S].
-waitForIt = {
-  thanksGeoff: [5, 300]
-}
-
-# The bot should only say these once per N in seconds
-timeouts = {
-    doIt: 10,
-    thanksGeoff: 300
-}
-
-# Add +/- this number of seconds totimeouts.
-# The number must be a positive int > 10.
-# The middle of the number is normalized to 0 and either
-# the first half is subtracted or the second half is added
-# ot the lastSent timestamp
-timoutRandom = {
-  thanksGeoff: 60
-}
-
-###
-INTERNAL SETTINGS
-###
-
-# keep track of the last time one of something was sent
-lastSent = {};
-
-###
-INTERNAL FUNCTIONS
-###
-
-getMessage = (key) ->
-  console.log("#{key} is an array", isArray(groupResponses[key]))
-
-setLastSent = (key) ->
-  if !key
-    return 0
-  randAmt = 0
-  randMsec = 0
-  if timoutRandom[key]
-    randMsec = parseInt(timoutRandom[key], 10) * 1000
-  if randMsec > 10
-    randAmt = 0 + ((randMsec / 2) - (Math.random() * randMsec))
-  lastSent[key] = new Date().getTime() + randAmt
-  return randAmt
-
-checkLastSent = (key) ->
-  if !key
-    return false
-  if lastSent[key] and timeouts[key]
-    currAgo = new Date().getTime() - (timeouts[key] * 1000)
-    if lastSent[key] < currAgo
-      setLastSent(key)
-      return true
-  else
-    setLastSent(key)
-    return 'yo'
-  return false
-
-waitingForIt = (key) ->
-  if !key
-    return false
-  counted = 0
-  waitKey = '@@WAITING@@'+key+'@@'
-
-###
-YOUR FUNCTIONS
-###
-
-module.exports = (robot) ->
-  # doIt
-  robot.hear /^do it/i, (msg) ->
-    msg.send(groupResponses.doIt)
-
-  robot.hear /^thanks (geoff|@gm)[.!]*$/i, (msg) ->
-    getMessage('thanksGeoff')
-    if checkLastSent('thanksGeoff')
-      msg.send(groupResponses.thanksGeoff[Math.floor(Math.random()*groupResponses.thanksGeoff.length)])
-
-  robot.hear /your mom/i, (msg) ->
-    msg.send(groupResponses.doit)
-
-
-*/
