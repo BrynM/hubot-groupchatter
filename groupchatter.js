@@ -28,17 +28,18 @@ var chatter = {};
     */
     var env = {
         consolePrefix: 'CHATTER',
-        debugMode: true,
+        debugMode: false,
         delays: {},
         delaysRandom: {},
         flipFlops: {},
-        infoMode: true,
+        infoMode: false,
         lastSent: {},
         logLevel: 'warn',
         pctBonus: {},
         percentChance: {},
         responses: {},
         regexes: {},
+        regexesNot: {},
         robot: null,
         silentMode: false,
         timeouts: {},
@@ -57,6 +58,8 @@ var chatter = {};
     */
 
     chatter.addResponse = function(key, message) {
+        var idx;
+
         if(!isStr(key) || !isStr(message)) {
             return;
         }
@@ -65,11 +68,11 @@ var chatter = {};
             env.responses[key] = [];
         }
 
-        env.responses[key].push(message);
+        idx = env.responses[key].push(message);
 
-        dbg('Added '+message.length+' character response.', key);
+        dbg('Added '+message.length+' character response at index '+idx+'.', key);
 
-        return message;
+        return env.responses[key][idx];
     };
 
     chatter.delay = function(key, seconds) {
@@ -102,24 +105,24 @@ var chatter = {};
         return env.delaysRandom[key];
     }
 
-    chatter.flipFlop = function(key, responsesA, responsesB, pctA) {
-        var pctInt = parseInt(pctA, 10);
+    chatter.flipFlop = function(key, keyA, keyB, percentA) {
+        var pctInt = parseInt(percentA, 10);
 
         if(!isStr(key)) {
             return;
         }
 
-        if(!_.isArray(env.responses[responsesA]) || env.responses[responsesA].length < 1) {
+        if(!_.isArray(env.responses[keyA]) || env.responses[keyA].length < 1) {
             return;
         }
 
-        if(!_.isArray(env.responses[responsesB]) || env.responses[responsesB].length < 1) {
+        if(!_.isArray(env.responses[keyB]) || env.responses[keyB].length < 1) {
             return;
         }
 
-        env.flipFlops[key] = [responsesA, responsesB];
+        env.flipFlops[key] = [keyA, keyB];
 
-        if(typeof pctA === 'number') {
+        if(typeof percentA === 'number') {
             env.flipFlops[key].push(pctInt);
         } else {
             env.flipFlops[key].push(-1);
@@ -161,8 +164,8 @@ var chatter = {};
         return ''+env.logLevel;
     }
 
-    chatter.percentChance = function(key, pct, bonus) {
-        var chance = parseInt(pct, 10);
+    chatter.percentChance = function(key, percent, bonus) {
+        var chance = parseInt(percent, 10);
 
         if(!isStr(key) || (chance < 1)) {
             return;
@@ -186,7 +189,7 @@ var chatter = {};
             return;
         }
 
-        if(regex instanceof RegExp) {
+        if(isRgx(regex)) {
             rex = regex;
         } else if(isStr(regex)) {
             try {
@@ -199,6 +202,31 @@ var chatter = {};
 
         if(rex) {
             env.regexes[key] = rex;
+        }
+
+        return rex;
+    };
+
+    chatter.regexIgnore = function(key, regex) {
+        var rex = false;
+
+        if(!isStr(key)) {
+            return;
+        }
+
+        if(isRgx(regex)) {
+            rex = regex;
+        } else if(isStr(regex)) {
+            try {
+                rex = new RegExp(regex);
+            } catch(e) {
+                err('Could not create regex from string!', [key, regex, e]);
+                rex = false;
+            }
+        }
+
+        if(rex) {
+            env.regexesNot[key] = rex;
         }
 
         return rex;
@@ -350,6 +378,23 @@ var chatter = {};
         return percentChance(env.percentChance[key], bonus);
     }
 
+    function checkRegexIgnore(key, msgObj) {
+        var regexes, iter, len;
+
+        if(_.isArray(env.regexesNot[key])) {
+            regexes = env.regexesNot[key];
+            len = regexes.length;
+
+            for(iter = 0; iter < len; iter++) {
+                if(isRgx(regexes[iter]) && regexes[iter].test(getQuoteFromMsg(msgObj))) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     function checkTimeout(key) {
         var ago;
 
@@ -388,18 +433,20 @@ var chatter = {};
 
         env.waitCounts[key]++;
 
+        // set the timeout if not set
         if(env.waitCounts[key] < 2) {
             env.waitingTimes[key] = waitStamp;
         }
 
         if(typeof env.waitForTimeout[key] === 'number') {
-            if(waitStamp < (env.waitingTimes[key] + (env.waitForTimeout[key]*1000))) {
+            if(waitStamp > (env.waitingTimes[key] + (env.waitForTimeout[key]*1000))) {
                 // not enough time
+                resetWaitForIt(key, null);
+                dbg('Wait for it timed out.', [waitStamp, env.waitingTimes[key], env.waitForTimeout[key]])
+
                 return;
             }
         }
-
-        // waitForTimeout, waitingTimes
 
         if(env.waitCounts[key] >= env.waitForIt[key]) {
             dbg('Wait for it count met.', [env.waitForIt[key], env.waitCounts[key]])
@@ -408,6 +455,7 @@ var chatter = {};
             return true;
         }
 
+        dbg('Wait for it too few.', [env.waitForIt[key], env.waitCounts[key]]);
         return false;
     }
 
@@ -488,6 +536,10 @@ var chatter = {};
         return 'unknown-user';
     }
 
+    function isRgx(regex) {
+        return regex instanceof RegExp;
+    }
+
     function isStr(key) {
         return typeof key === 'string' && key.length > 0;
     }
@@ -513,13 +565,13 @@ var chatter = {};
     function respond(key, msgObj) {
         dbg('Checking for possible responses.', key);
 
-        if(!checkWaitForIt(key)) {
-            info('Check waitForIt test fail. Aborting response.', key);
+        if(!checkTimeout(key)) {
+            info('Check throttle test fail. Aborting response.', key);
             return;
         }
 
-        if(!checkTimeout(key)) {
-            info('Check throttle test fail. Aborting response.', key);
+        if(!checkWaitForIt(key)) {
+            info('Check waitForIt test fail. Aborting response.', key);
             return;
         }
 
