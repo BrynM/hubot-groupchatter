@@ -6,6 +6,8 @@ Included is functionality for percentage based randomization, randomized binary 
 
 On top of that, you don't need to have much understanding of CoffeeScript to add response logic or tie that logic together. You will need to know some about regular expressions though.
 
+Keep in mind that I wrote this pretty quickly to get my feet wet with Hubot. No warranties or fitness, yadda, yadda, [license](https://github.com/BrynM/hubot-groupchatter/blob/master/license.txt), yadda... You know how it goes. Code contributions are welcome!
+
 <!-- To generate the TOC, run `doctoc \-\-title '# Contents' ReadMe.md` -->
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -89,6 +91,8 @@ On top of that, you don't need to have much understanding of CoffeeScript to add
 1. Edit ```groupchatter.coffee``` to your liking.
 1. Run your bot and trigger the responses.
 
+<small>Note: If you want to install from GitHub, use ```npm install git://github.com/BrynM/hubot-groupchatter.git``` or ```npm install git://github.com/BrynM/hubot-groupchatter.git#0.1.0``` for a specific version ("0.1.0" in this example). It is advised you install from npm's copy.</small>
+
 ## Usage
 
 ### General
@@ -143,6 +147,9 @@ To use a template variable in your response, surround it in two hash marks ("##"
 |time|The current server time|
 |user|The user who sent the detected message|
 |utc|The current server date and time translated to UTC|
+|1|The first sub-match in your regular expression [<sup>1</sup>](#note-1)|
+
+<a name="note-1">Note 1:</a><small> Regular expression matches are actually template variables 1 through 30 ("##1##", "##2##", "##3##", "##4##" ... "##30##",). Regular expression sub-matches that don't exist will be replaced with an empty string (""). This was the best way to deal with it for now.</small>
 
 ##### Example
 ```coffeescript
@@ -161,9 +168,7 @@ chatter = require 'hubot-groupchatter'
 
 ### ```chatter.addResponse(key, message)``` ***Required***
 
-Add one or many messages for a given set key.
-
-Returns the message back on success and undefined on failure.
+Add a message for a given set key. Returns the message back on success and undefined on failure.
 
 ##### Argument: ```key```
 
@@ -320,6 +325,8 @@ chatter.percentChance('sometimesRespond', 20, 20)
 
 ### ```chatter.regex(key, regex)``` ***Required***
 
+Set a regular expression to match something another user says that you'd like your set to trigger on. Only one regular expression is allowed per set, so multiple calls will overwrite each other with the newest call winning.
+
 ##### Argument: ```key```
 
 * *string*
@@ -328,14 +335,25 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```regex```
 
+* *```RegExp``` object*
+
+The regular expression that you'd like your set to trigger on. This expression supports sub-matches that count from 1-30. Regular expression sub-matches that don't exist, but appear in templates, will be replaced with an empty string ("").
+
 ##### Example
 ```coffeescript
-# example
+# set a simple regex
+chatter.regex('noWay', /^way[!.]?$/i)
+
+# use sub-matches in template vars
+chatter.regex('matchedThing', /^look at (that|this|my|your|their|its) thing$/)
+chatter.addResponse('matchedThing', 'Nobody wants ##1## thing, ##user##!')
 ```
 
 
 ### ```chatter.regexIgnore(key, regex)```
 
+Set a regular expression to match something another user says that you'd like your set to trigger on. Quite handy for avoiding embarrassing phrases and situations if you need to. These must be created per-set as you need them and multiple ignored regular expressions are supported per set.
+
 ##### Argument: ```key```
 
 * *string*
@@ -344,38 +362,59 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```regex```
 
+* *```RegExp``` object*
+
+The regular expression that you'd like your set to ignore.
+
 ##### Example
 ```coffeescript
-# example
+chatter.regex('stayOutOfIt', /(vim|emacs).*(emacs|vim)/i)
 ```
 
 
 ### ```chatter.setUserPrefix(prefix)``` ***Optional Setup***
 
+Set a prefix to be prepended to the ```##user##``` response template variable. By detault "@" is used. Thus, the template "Hi ##user##!" for the user "steve" would end up with the response of "Hi @steve!".
+
 ##### Argument: ```prefix```
 
 * *string*
 
-##### Example
+The string you'd like to be prepended to the user that triggered the response..
 
+##### Example
+```coffeescript
+# change this for a reddit bot
+chatter.setUserPrefix('/u/')
+```
 
 ### ```chatter.setUserSuffix(suffix)``` ***Optional Setup***
+
+Set a prefix to be prepended to the ```##user##``` response template variable. By default an empty string ("") is used. Thus, the template "Hi ##user##!" with a suffix of "(jerk)" for the user "steve" would end up with the response of "Hi steve(jerk)!".
+
 
 ##### Argument: ```suffix```
 
 * *string*
 
+The string you'd like to be appended to the user that triggered the response..
+
 ##### Example
 ```coffeescript
-# example
+# add the clan tag to user names
+chatter.setUserPrefix('[APES]')
 ```
 
 
 ### ```chatter.startup(robot)``` ***Required***
 
+This is to be assigned as the ```module.exports``` of your Hubot script. If you do not put this somewhere in your script, groupchatter will never respond.
+
 ##### Argument: ```robot```
 
-* *exports invocated Hubot Robot object*
+* *```module.exports``` invocated Hubot Robot object*
+
+```module.exports``` will deal with this argument. Unless you're doing groupchatter development, you can safely ignore it.
 
 ##### Example
 ```coffeescript
@@ -385,6 +424,10 @@ module.exports = chatter.startup
 
 ### ```chatter.throttle(key, seconds, random)```
 
+Throttle a set to only respond again after ```seconds```. Until that time expires, groupchatter will ignore any new triggers as well - including incrementing [```chatter.waitForIt()```](#chatterwaitforitkey-count-seconds) counts.
+
+Optionally, a ```random``` variation in seconds can be provided. This number is split and applied centered to the end of ```seconds```. For example, with ```seconds``` set to 30 and ```random``` set to 10, groupchatter will not respond again for a random time between 25 and 35 seconds.
+
 ##### Argument: ```key```
 
 * *string*
@@ -393,15 +436,29 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```seconds```
 
+* *positive integer*
+
+The number of seconds groupchatter should wait. Using a value of ```seconds``` below 1 will be ignored and throttling will be disabled.
+
 ##### Optional Argument: ```random```
+
+* *positive integer*
+
+The number of seconds to randomly add/subtract to ```seconds```. Using a value of ```random``` below 1 will nullify the randomization, but timing out may continue.
 
 ##### Example
 ```coffeescript
-# example
+# wait 5 minutes before responding again
+chatter.throttle('wait5Mins', 300)
+
+# only respond every 30 to 90 seconds
+chatter.throttle('notTooFast', 60, 60)
 ```
 
 
 ### ```chatter.waitForIt(key, count, seconds)```
+
+Will wait until triggered ```count``` times before responding. Optionally, ```count``` can be constrained to a specific time window in ```seconds```.
 
 ##### Argument: ```key```
 
@@ -411,17 +468,26 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```count```
 
+* *positive integer*
+
+The number of triggers that must happen before groupchatter will respond. Using a value of ```count``` below 1 will be ignored.
+
 ##### Optional Argument: ```seconds```
+
+* *positive integer*
+
+Optional number of ```seconds``` that ```count``` must be achieved in. If not achieved, the counter will be reset on the next trigger after ```seconds``` expires. Using a value of ```seconds``` below 1 will be ignored, but triggering will continue.
 
 ##### Example
 ```coffeescript
-# example
+chatter.waitForIt('replyEvery100', 100)
+
+chatter.waitForIt('replyYesWithin1Min', 5, 60)
 ```
 
 ## Technical Details
 
 * This code is released under the GPLv3 License.
-* If you want to install from GitHub, use ```npm install git://github.com/BrynM/hubot-groupchatter.git``` or ```npm install git://github.com/BrynM/hubot-groupchatter.git#0.0.2``` for a specific version.
 * Most of the normal Hubot response setup logic has been abstracted away.
 * This module will not help you write regular expressions. You're on your own there. Don't give up. They're infinitely useful.
 * I wrote this code quickly and don't have a lot of time for maintaining it. If you have issues please feel free to file a bug, but I cannot guarantee a decent response time. If you'd like to join the project let me know, but I must ask that you have a history of contributing before allowing you direct access (unless I can personally vouch for you).
@@ -434,10 +500,10 @@ The key name for the set you'd like to use.
 
 These are in order of importance. If you'd like to contribute, feel free to take a stab at one of them.
 
+* Make a ```chatter.waitForItRandom()```.
 * Add user defined variables for responses (requires regex escaping of var names).
 * Optional per-user triggers in a clean way (throttling, delays, trolling someone specific, etc.).
 * Add command interface from specific user names ("admins") to run public functions. This would make the bot configurable from chat.
 * Add some callback functionality.
 * Add alarm clock functionality (with snooze?).
-* Implement Hubot logging? Might need a delayed queue on startup until the exports run.
 
