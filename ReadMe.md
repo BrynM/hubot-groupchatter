@@ -14,72 +14,61 @@ Keep in mind that I wrote this pretty quickly to get my feet wet with Hubot. No 
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Usage](#usage)
-  - [General](#general)
-  - [Caveats](#caveats)
-  - [Sample ```scripts``` file](#sample-scripts-file)
-- [Reference](#reference)
-  - [Response template Variables](#response-template-variables)
-      - [List of Template Variables](#list-of-template-variables)
-      - [Example](#example)
-  - [```chatter``` ***Required***](#chatter-required)
-      - [Example](#example-1)
-  - [```chatter.addResponse(key, message)``` ***Required***](#chatteraddresponsekey-message-required)
-      - [Argument: ```key```](#argument-key)
-      - [Argument: ```message```](#argument-message)
-      - [Example](#example-2)
-  - [```chatter.delay(key, seconds)```](#chatterdelaykey-seconds)
-      - [Argument: ```key```](#argument-key-1)
-      - [Argument: ```seconds```](#argument-seconds)
-      - [Example](#example-3)
-  - [```chatter.delayRandom(key, seconds)```](#chatterdelayrandomkey-seconds)
-      - [Argument: ```key```](#argument-key-2)
-      - [Argument: ```seconds```](#argument-seconds-1)
-      - [Example](#example-4)
-  - [```chatter.flipFlop(key, keyA, keyB, percentA)```](#chatterflipflopkey-keya-keyb-percenta)
-      - [Argument: ```key```](#argument-key-3)
-      - [Argument: ```keyA```](#argument-keya)
-      - [Argument: ```keyB```](#argument-keyb)
-      - [Optional Argument: ```percentA```](#optional-argument-percenta)
-      - [Example](#example-5)
-  - [```chatter.logLevel(setMode)``` ***Optional Setup***](#chatterloglevelsetmode-optional-setup)
-      - [Argument: ```setMode```](#argument-setmode)
-      - [Example](#example-6)
-  - [```chatter.percentChance(key, percent, bonus)```](#chatterpercentchancekey-percent-bonus)
-      - [Argument: ```key```](#argument-key-4)
-      - [Argument: ```percent```](#argument-percent)
-      - [Optional Argument: ```bonus```](#optional-argument-bonus)
-      - [Example](#example-7)
-  - [```chatter.regex(key, regex)``` ***Required***](#chatterregexkey-regex-required)
-      - [Argument: ```key```](#argument-key-5)
-      - [Argument: ```regex```](#argument-regex)
-      - [Example](#example-8)
-  - [```chatter.regexIgnore(key, regex)```](#chatterregexignorekey-regex)
-      - [Argument: ```key```](#argument-key-6)
-      - [Argument: ```regex```](#argument-regex-1)
-      - [Example](#example-9)
-  - [```chatter.setUserPrefix(prefix)``` ***Optional Setup***](#chattersetuserprefixprefix-optional-setup)
-      - [Argument: ```prefix```](#argument-prefix)
-      - [Example](#example-10)
-  - [```chatter.setUserSuffix(suffix)``` ***Optional Setup***](#chattersetusersuffixsuffix-optional-setup)
-      - [Argument: ```suffix```](#argument-suffix)
-      - [Example](#example-11)
-  - [```chatter.startup(robot)``` ***Required***](#chatterstartuprobot-required)
-      - [Argument: ```robot```](#argument-robot)
-      - [Example](#example-12)
-  - [```chatter.throttle(key, seconds, random)```](#chatterthrottlekey-seconds-random)
-      - [Argument: ```key```](#argument-key-7)
-      - [Argument: ```seconds```](#argument-seconds-2)
-      - [Optional Argument: ```random```](#optional-argument-random)
-      - [Example](#example-13)
-  - [```chatter.waitForIt(key, count, seconds)```](#chatterwaitforitkey-count-seconds)
-      - [Argument: ```key```](#argument-key-8)
-      - [Argument: ```count```](#argument-count)
-      - [Optional Argument: ```seconds```](#optional-argument-seconds)
-      - [Example](#example-14)
-- [Technical Details](#technical-details)
-- [Future Hopes](#future-hopes)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [General](#general)
+    - [Caveats](#caveats)
+    - [Sample ```scripts``` file](#sample-scripts-file)
+  - [Reference](#reference)
+    - [Response template Variables](#response-template-variables)
+        - [List of Template Variables](#list-of-template-variables)
+        - [Example](#example)
+    - [```chatter``` ***Required***](#chatter-required)
+        - [Example](#example-1)
+    - [```chatter.addResponse(key, message)``` ***Required***](#chatteraddresponsekey-message-required)
+        - [Argument: ```key```](#argument-key)
+        - [Argument: ```message```](#argument-message)
+        - [Example](#example-2)
+    - [```chatter.delay(key, seconds)```](#chatterdelaykey-seconds)
+        - [Argument: ```key```](#argument-key-1)
+        - [Argument: ```seconds```](#argument-seconds)
+        - [Example](#example-3)
+    - [```chatter.delayRandom(key, seconds)```](#chatterdelayrandomkey-seconds)
+        - [Argument: ```key```](#argument-key-2)
+        - [Argument: ```seconds```](#argument-seconds-1)
+        - [Example](#example-4)
+    - [```chatter.flipFlop(key, keyA, keyB, percentA)```](#chatterflipflopkey-keya-keyb-percenta)
+        - [Argument: ```key```](#argument-key-3)
+        - [Argument: ```keyA```](#argument-keya)
+        - [Argument: ```keyB```](#argument-keyb)
+        - [Optional Argument: ```percentA```](#optional-argument-percenta)
+        - [Example](#example-5)
+    - [```chatter.logLevel(setMode)``` ***Optional Setup***](#chatterloglevelsetmode-optional-setup)
+        - [Argument: ```setMode```](#argument-setmode)
+        - [Example](#example-6)
+    - [```chatter.percentChance(key, percent, bonus)```](#chatterpercentchancekey-percent-bonus)
+        - [Argument: ```key```](#argument-key-4)
+        - [Argument: ```percent```](#argument-percent)
+        - [Optional Argument: ```bonus```](#optional-argument-bonus)
+        - [Example](#example-7)
+    - [```chatter.regex(key, regex)``` ***Required***](#chatterregexkey-regex-required)
+        - [Argument: ```key```](#argument-key-5)
+        - [Argument: ```regex```](#argument-regex)
+        - [Example](#example-8)
+    - [```chatter.regexIgnore(key, regex)```](#chatterregexignorekey-regex)
+        - [Argument: ```key```](#argument-key-6)
+        - [Argument: ```regex```](#argument-regex-1)
+        - [Example](#example-9)
+    - [```chatter.setUserPrefix(prefix)``` ***Optional Setup***](#chattersetuserprefixprefix-optional-setup)
+        - [Argument: ```prefix```](#argument-prefix)
+        - [Example](#example-10)
+    - [```chatter.setUserSuffix(suffix)``` ***Optional Setup***](#chattersetusersuffixsuffix-optional-setup)
+        - [Argument: ```suffix```](#argument-suffix)
+        - [Example](#example-11)
+    - [```chatter.startup(robot)``` ***Required***](#chatterstartuprobot-required)
+        - [Argument: ```robot```](#argument-robot)
+- [wait 5 minutes before responding again](#wait-5-minutes-before-responding-again)
+- [only respond every 30 to 90 seconds](#only-respond-every-30-to-90-seconds)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -90,6 +79,8 @@ Keep in mind that I wrote this pretty quickly to get my feet wet with Hubot. No 
 1. Copy ```node_modules/hubot-groupchatter/groupchatter.coffee.sample``` to your Hubot ```scripts``` directory and rename the file to ```groupchatter.coffee```.
 1. Edit ```groupchatter.coffee``` to your liking.
 1. Run your bot and trigger the responses.
+
+<small>Note: If you want to install from GitHub, use ```npm install git://github.com/BrynM/hubot-groupchatter.git``` or ```npm install git://github.com/BrynM/hubot-groupchatter.git#0.1.0``` for a specific version ("0.1.0" in this example). It is advised you install from npm's copy.</small>
 
 ## Usage
 
@@ -146,16 +137,8 @@ To use a template variable in your response, surround it in two hash marks ("##"
 |user|The user who sent the detected message|
 |utc|The current server date and time translated to UTC|
 |1|The first sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|2|The second sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|3|The third sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|4|The fourth sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|5|The fifth sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|6|The sixth sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|7|The seventh sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|8|The eighth sub-match in your regular expression [<sup>1</sup>](#note-1)|
-|9|The ninth sub-match in your regular expression [<sup>1</sup>](#note-1)|
 
-<a name="note-1"></a><small>Regular expression sub-matches will be replaced with the text "#ER#". This was the best way to deal with it for now.</small>
+<a name="note-1"></a><small>Regular expression matches are actually template variables 1 through 30 ("##1##", "##2##", "##3##", "##4##" ... "##30##",). Regular expression sub-matches that don't exist will be replaced with an empty string (""). This was the best way to deal with it for now.</small>
 
 ##### Example
 ```coffeescript
@@ -343,18 +326,22 @@ The key name for the set you'd like to use.
 
 * *```RegExp``` object*
 
-The regular expression that you'd like your set to trigger on.
+The regular expression that you'd like your set to trigger on. This expression supports sub-matches that count from 1-30. Regular expression sub-matches that don't exist, but appear in templates, will be replaced with an empty string ("").
 
 ##### Example
 ```coffeescript
-chatter.regex('noWay', /^way$/)
+# set a simple regex
+chatter.regex('noWay', /^way[!.]?$/i)
 
+# use sub-matches in template vars
 chatter.regex('matchedThing', /^look at (that|this|my|your|their|its) thing$/)
 chatter.addResponse('matchedThing', 'Nobody wants ##1## thing, ##user##!')
 ```
 
 
 ### ```chatter.regexIgnore(key, regex)```
+
+Set a regular expression to match something another user says that you'd like your set to trigger on. Quite handy for avoiding embarrassing phrases and situations if you need to. These must be created per-set as you need them and multiple ignored regular expressions are supported per set.
 
 ##### Argument: ```key```
 
@@ -364,38 +351,59 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```regex```
 
+* *```RegExp``` object*
+
+The regular expression that you'd like your set to ignore.
+
 ##### Example
 ```coffeescript
-# example
+chatter.regex('stayOutOfIt', /(vim|emacs).*(emacs|vim)/i)
 ```
 
 
 ### ```chatter.setUserPrefix(prefix)``` ***Optional Setup***
 
+Set a prefix to be prepended to the ```##user##``` response template variable. By detault "@" is used. Thus, the template "Hi ##user##!" for the user "steve" would end up with the response of "Hi @steve!".
+
 ##### Argument: ```prefix```
 
 * *string*
 
-##### Example
+The string you'd like to be prepended to the user that triggered the response..
 
+##### Example
+```coffeescript
+# change this for a reddit bot
+chatter.setUserPrefix('/u/')
+```
 
 ### ```chatter.setUserSuffix(suffix)``` ***Optional Setup***
+
+Set a prefix to be prepended to the ```##user##``` response template variable. By default an empty string ("") is used. Thus, the template "Hi ##user##!" with a suffix of "(jerk)" for the user "steve" would end up with the response of "Hi steve(jerk)!".
+
 
 ##### Argument: ```suffix```
 
 * *string*
 
+The string you'd like to be appended to the user that triggered the response..
+
 ##### Example
 ```coffeescript
-# example
+# add the clan tag to user names
+chatter.setUserPrefix('[APES]')
 ```
 
 
 ### ```chatter.startup(robot)``` ***Required***
 
+This is to be assigned as the ```module.exports``` of your Hubot script. If you do not put this somewhere in your script, groupchatter will never respond.
+
 ##### Argument: ```robot```
 
-* *exports invocated Hubot Robot object*
+* *```module.exports``` invocated Hubot Robot object*
+
+```module.exports``` will deal with this argument. Unless you're doing groupchatter development, you can safely ignore it.
 
 ##### Example
 ```coffeescript
@@ -405,6 +413,10 @@ module.exports = chatter.startup
 
 ### ```chatter.throttle(key, seconds, random)```
 
+Throttle a set to only respond again after ```seconds```. Until that time expires, groupchatter will ignore any new triggers as well - including incrementing [```chatter.waitForIt()```](#chatterwaitforitkey-count-seconds) counts.
+
+Optionally, a ```random``` variation in seconds can be provided. This number is split and applied centered to the end of ```seconds```. For example, with ```seconds``` set to 30 and ```random``` set to 10, groupchatter will not respond again for a random time between 25 and 35 seconds.
+
 ##### Argument: ```key```
 
 * *string*
@@ -413,15 +425,29 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```seconds```
 
+* *positive integer*
+
+The number of seconds groupchatter should wait. Using a value of ```seconds``` below 1 will be ignored and throttling will be disabled.
+
 ##### Optional Argument: ```random```
+
+* *positive integer*
+
+The number of seconds to randomly add/subtract to ```seconds```. Using a value of ```random``` below 1 will nullify the randomization, but timing out may continue.
 
 ##### Example
 ```coffeescript
-# example
+# wait 5 minutes before responding again
+chatter.throttle('wait5Mins', 300)
+
+# only respond every 30 to 90 seconds
+chatter.throttle('notTooFast', 60, 60)
 ```
 
 
 ### ```chatter.waitForIt(key, count, seconds)```
+
+Will wait until triggered ```count``` times before responding. Optionally, ```count``` can be constrained to a specific time window in ```seconds```.
 
 ##### Argument: ```key```
 
@@ -431,17 +457,26 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```count```
 
+* *positive integer*
+
+The number of triggers that must happen before groupchatter will respond. Using a value of ```count``` below 1 will be ignored.
+
 ##### Optional Argument: ```seconds```
+
+* *positive integer*
+
+Optional number of ```seconds``` that ```count``` must be achieved in. If not achieved, the counter will be reset on the next trigger after ```seconds``` expires. Using a value of ```seconds``` below 1 will be ignored, but triggering will continue.
 
 ##### Example
 ```coffeescript
-# example
+chatter.waitForIt('replyEvery100', 100)
+
+chatter.waitForIt('replyYesWithin1Min', 5, 60)
 ```
 
 ## Technical Details
 
 * This code is released under the GPLv3 License.
-* If you want to install from GitHub, use ```npm install git://github.com/BrynM/hubot-groupchatter.git``` or ```npm install git://github.com/BrynM/hubot-groupchatter.git#0.0.2``` for a specific version.
 * Most of the normal Hubot response setup logic has been abstracted away.
 * This module will not help you write regular expressions. You're on your own there. Don't give up. They're infinitely useful.
 * I wrote this code quickly and don't have a lot of time for maintaining it. If you have issues please feel free to file a bug, but I cannot guarantee a decent response time. If you'd like to join the project let me know, but I must ask that you have a history of contributing before allowing you direct access (unless I can personally vouch for you).
@@ -454,6 +489,7 @@ The key name for the set you'd like to use.
 
 These are in order of importance. If you'd like to contribute, feel free to take a stab at one of them.
 
+* Make a ```chatter.waitForItRandom()```.
 * Add user defined variables for responses (requires regex escaping of var names).
 * Optional per-user triggers in a clean way (throttling, delays, trolling someone specific, etc.).
 * Add command interface from specific user names ("admins") to run public functions. This would make the bot configurable from chat.
