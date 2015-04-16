@@ -149,7 +149,7 @@ To use a template variable in your response, surround it in two hash marks ("##"
 |utc|The current server date and time translated to UTC|
 |1|The first sub-match in your regular expression [<sup>1</sup>](#note-1)|
 
-<a name="note-1">Note 1</a><small>Regular expression matches are actually template variables 1 through 30 ("##1##", "##2##", "##3##", "##4##" ... "##30##",). Regular expression sub-matches that don't exist will be replaced with an empty string (""). This was the best way to deal with it for now.</small>
+<a name="note-1">Note 1:</a><small> Regular expression matches are actually template variables 1 through 30 ("##1##", "##2##", "##3##", "##4##" ... "##30##",). Regular expression sub-matches that don't exist will be replaced with an empty string (""). This was the best way to deal with it for now.</small>
 
 ##### Example
 ```coffeescript
