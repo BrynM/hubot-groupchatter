@@ -23,6 +23,8 @@ var chatter = {};
 
 (function() {
 
+    var chatterPackage = require('./package.json');
+
     /*
     * Set up our environment
     */
@@ -46,6 +48,7 @@ var chatter = {};
         timeoutRandom: {},
         userPrefix: '@',
         userSuffix: '',
+        version: chatterPackage.version,
         waitCounts: {},
         waitForIt: {},
         waitForTimeout: {},
@@ -249,8 +252,8 @@ var chatter = {};
     }
 
     chatter.startup = function(robot) {
-        info('Loading up robot!');
         env.robot = robot;
+        log('Loading up robot vor groupchatter version '+env.version+'!');
 
         applyAllRegexes(robot);
     };
@@ -300,33 +303,73 @@ var chatter = {};
         var argsCopy = _.toArray(args);
 
         if(typeof argsCopy[0] === 'string') {
-            argsCopy[0] = '['+env.consolePrefix+' '+level.toUpperCase()+'] '+argsCopy[0];
+            argsCopy[0] = '['+env.consolePrefix+(level? ' '+level.toUpperCase(): '')+'] '+argsCopy[0];
         }
 
         return argsCopy;
     }
 
     function dbg(msg) {
+        var args;
+
         if(!env.silentMode && env.debugMode) {
-            console.log.apply(console, consoleArgs(arguments, 'debug'));
+            args = consoleArgs(arguments, 'debug');
+
+            if(env.robot) {
+                env.robot.logger.debug.apply(env.robot.logger, args);
+            } else {
+                console.log.apply(console, args);
+            }
         }
     }
 
     function err(msg) {
+        var args;
+
         if(!env.silentMode) {
-            console.error.apply(console, consoleArgs(arguments, 'error'));
+            args = consoleArgs(arguments, 'debug');
+
+            if(env.robot) {
+                env.robot.logger.error.apply(env.robot.logger, args);
+            } else {
+                console.error.apply(console, args);
+            }
         }
     }
 
     function info(msg) {
+        var args;
+
         if(!env.silentMode && env.infoMode) {
-            console.info.apply(console, consoleArgs(arguments, 'info'));
+            args = consoleArgs(arguments, 'debug');
+            
+            if(env.robot) {
+                env.robot.logger.info.apply(env.robot.logger, args);
+            } else {
+                console.info.apply(console, args);
+            }
+        }
+    }
+
+    function log(msg) {
+        if(env.robot) {
+            env.robot.logger.info.apply(env.robot.logger, consoleArgs(arguments, null));
+        } else {
+            console.log.apply(console, consoleArgs(arguments, 'info'));
         }
     }
 
     function warn(msg) {
+        var args;
+
         if(!env.silentMode && env.warnMode) {
-            console.warn.apply(console, consoleArgs(arguments, 'warn'));
+            args = consoleArgs(arguments, 'warn');
+            
+            if(env.robot) {
+                env.robot.logger.warn.apply(env.robot.logger, args);
+            } else {
+                console.warn.apply(console, args);
+            }
         }
     }
 

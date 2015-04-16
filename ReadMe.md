@@ -439,5 +439,4 @@ These are in order of importance. If you'd like to contribute, feel free to take
 * Add command interface from specific user names ("admins") to run public functions. This would make the bot configurable from chat.
 * Add some callback functionality.
 * Add alarm clock functionality (with snooze?).
-* Implement Hubot logging? Might need a delayed queue on startup until the exports run.
 
