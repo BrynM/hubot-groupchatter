@@ -6,6 +6,8 @@ Included is functionality for percentage based randomization, randomized binary 
 
 On top of that, you don't need to have much understanding of CoffeeScript to add response logic or tie that logic together. You will need to know some about regular expressions though.
 
+Keep in mind that I wrote this pretty quickly to get my feet wet with Hubot. No warranties or fitness, yadda, yadda, [license](https://github.com/BrynM/hubot-groupchatter/blob/master/license.txt), yadda... You know how it goes. Code contributions are welcome!
+
 <!-- To generate the TOC, run `doctoc \-\-title '# Contents' ReadMe.md` -->
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -143,6 +145,17 @@ To use a template variable in your response, surround it in two hash marks ("##"
 |time|The current server time|
 |user|The user who sent the detected message|
 |utc|The current server date and time translated to UTC|
+|1|The first sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|2|The second sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|3|The third sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|4|The fourth sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|5|The fifth sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|6|The sixth sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|7|The seventh sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|8|The eighth sub-match in your regular expression [<sup>1</sup>](#note-1)|
+|9|The ninth sub-match in your regular expression [<sup>1</sup>](#note-1)|
+
+<a name="note-1"></a><small>Regular expression sub-matches will be replaced with the text "#ER#". This was the best way to deal with it for now.</small>
 
 ##### Example
 ```coffeescript
@@ -161,9 +174,7 @@ chatter = require 'hubot-groupchatter'
 
 ### ```chatter.addResponse(key, message)``` ***Required***
 
-Add one or many messages for a given set key.
-
-Returns the message back on success and undefined on failure.
+Add a message for a given set key. Returns the message back on success and undefined on failure.
 
 ##### Argument: ```key```
 
@@ -320,6 +331,8 @@ chatter.percentChance('sometimesRespond', 20, 20)
 
 ### ```chatter.regex(key, regex)``` ***Required***
 
+Set a regular expression to match something another user says that you'd like your set to trigger on. Only one regular expression is allowed per set, so multiple calls will overwrite each other with the newest call winning.
+
 ##### Argument: ```key```
 
 * *string*
@@ -328,9 +341,16 @@ The key name for the set you'd like to use.
 
 ##### Argument: ```regex```
 
+* *```RegExp``` object*
+
+The regular expression that you'd like your set to trigger on.
+
 ##### Example
 ```coffeescript
-# example
+chatter.regex('noWay', /^way$/)
+
+chatter.regex('matchedThing', /^look at (that|this|my|your|their|its) thing$/)
+chatter.addResponse('matchedThing', 'Nobody wants ##1## thing, ##user##!')
 ```
 
 

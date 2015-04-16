@@ -23,8 +23,6 @@ var chatter = {};
 
 (function() {
 
-    var chatterPackage = require('./package.json');
-
     /*
     * Set up our environment
     */
@@ -37,6 +35,7 @@ var chatter = {};
         infoMode: false,
         lastSent: {},
         logLevel: 'warn',
+        package: require('./package.json'),
         pctBonus: {},
         percentChance: {},
         responses: {},
@@ -48,7 +47,6 @@ var chatter = {};
         timeoutRandom: {},
         userPrefix: '@',
         userSuffix: '',
-        version: chatterPackage.version,
         waitCounts: {},
         waitForIt: {},
         waitForTimeout: {},
@@ -57,7 +55,7 @@ var chatter = {};
     };
 
     /*
-    * chatter public functions
+    * chatter public functions - input validation should be done in here
     */
 
     chatter.addResponse = function(key, message) {
@@ -253,7 +251,8 @@ var chatter = {};
 
     chatter.startup = function(robot) {
         env.robot = robot;
-        log('Loading up robot vor groupchatter version '+env.version+'!');
+        log('Loading up robot vor groupchatter version '+env.package.version+'!');
+        info(env.package.homepage);
 
         applyAllRegexes(robot);
     };
@@ -502,6 +501,30 @@ var chatter = {};
         return false;
     }
 
+    // if no delay is set, fires immediately
+    // this is an intermediary function
+    function delayResponse(key, msgObj) {
+        var wait = 0;
+
+        if(typeof env.delays[key] === 'number') {
+            wait = wait+env.delays[key];
+        }
+
+        if(typeof env.delaysRandom[key] === 'number') {
+            wait = wait+(env.delaysRandom[key]*Math.random());
+        }
+
+        if(wait < 1) {
+            return respondRandom(key, msgObj);
+        }
+
+        dbg('Delaying random message.', [key, wait]);
+
+        return setTimeout(function() {
+            respondRandom(key, msgObj);
+        }, parseInt(wait*1000, 10));
+    }
+
     function flipFlop(key, msgObj) {
         var msg,
             respKey,
@@ -632,30 +655,6 @@ var chatter = {};
         delayResponse(key, msgObj);
     };
 
-    // if no delay is set, fires immediately
-    // this is an intermediary function
-    function delayResponse(key, msgObj) {
-        var wait = 0;
-
-        if(typeof env.delays[key] === 'number') {
-            wait = wait+env.delays[key];
-        }
-
-        if(typeof env.delaysRandom[key] === 'number') {
-            wait = wait+(env.delaysRandom[key]*Math.random());
-        }
-
-        if(wait < 1) {
-            return respondRandom(key, msgObj);
-        }
-
-        dbg('Delaying random message.', [key, wait]);
-
-        return setTimeout(function() {
-            respondRandom(key, msgObj);
-        }, parseInt(wait*1000, 10));
-    }
-
     // the real meat of the response after passing through intermediaries
     function respondRandom(key, msgObj) {
         var response,
@@ -678,7 +677,7 @@ var chatter = {};
             return;
         }
         
-        response = swapVars(env.responses[key][Math.floor(Math.random()*env.responses[key].length)], vars);
+        response = swapVars(env.responses[key][Math.floor(Math.random()*env.responses[key].length)], vars, msgObj);
 
         msgObj.send(response)
         last = setLastSent(key);
@@ -711,15 +710,31 @@ var chatter = {};
         return env.lastSent[key];
     }
 
-    function swapVars(str, vars) {
-        var iter;
+    function swapVars(str, vars, msgObj) {
+        var maxReg = 31, // starts at 1, so plus 1
+            iter, dat;
 
-        if(typeof str === 'string' && typeof vars === 'object') {
-            for (iter in vars) {
-                str = str.replace(new RegExp('\\#\\#'+iter+'\\#\\#'), vars[iter]);
+        if(typeof str === 'string') {
+            if(typeof vars === 'object') {
+                dat = _.extendOwn({}, vars);
+
+                // replace vars if needed
+                for (iter in dat) {
+                    str = str.replace(new RegExp('\\#\\#'+iter+'\\#\\#'), dat[iter]);
+                }
+            }
+
+            // replace regex sub-matches
+            for(iter = 1; iter < maxReg; iter++) {
+                if(str.indexOf('##'+iter+'##') > -1) {
+                    if(typeof msgObj.match[iter] === 'string') {
+                        str = str.replace(new RegExp('\\#\\#'+iter+'\\#\\#'), msgObj.match[iter]);
+                    } else {
+                        str = str.replace(new RegExp('\\#\\#'+iter+'\\#\\#'), '');
+                    }
+                }
             }
         }
-
         return str;
     }
 
